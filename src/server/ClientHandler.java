@@ -32,7 +32,7 @@ public class ClientHandler implements Runnable {
                     try {
                         while (true) {
                             Object msg = queue.take(); // Block until a message is available
-                            out.writeObject(msg);         // Send message to the client
+                            out.writeObject(msg);      // Send message to the client
                         }
                     } catch (InterruptedException e) {
                         System.err.println("Message sender interrupted for client: " + clientSocket);
@@ -44,8 +44,9 @@ public class ClientHandler implements Runnable {
                 try {
                     Object message;
                     while ((message = in.readObject()) != null) {
-                        if (message instanceof Message) {
-                            server.publishMessage((Message) message);
+                        if (message instanceof Message msg) {
+                            server.publishMessage(msg);
+                            System.out.println(new Message(msg.getSender(), msg.getMessage()));
                         }
                     }
                 } catch (ClassNotFoundException e) {

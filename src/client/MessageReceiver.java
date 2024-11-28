@@ -24,11 +24,10 @@ public class MessageReceiver implements Runnable {
             System.out.println("Message receiver started for client.");
             Object message;
             while ((message = in.readObject()) != null) {
-                if (message instanceof Message) {
-                    System.out.println(new Message(((Message) message).getSender(), ((Message) message).getMessage()));
+                if (message instanceof Message m) {
+                    System.out.println(new Message(m.getSender(), m.getMessage()));
                 }
             }
-            System.err.println("Message receiver while loop exited");
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Error reading from server." + e.getMessage());
         }
