@@ -19,19 +19,29 @@ public class ChatClient {
     public ChatClient(String serverAddress, int serverPort, String username) {
         this.user = new User(username);
 
-        try {
-            socket = new Socket(serverAddress, serverPort);
-            System.out.println("Connected to the chat server as " + username);
+        boolean connected = false;
+        while (!connected) {
+            try {
+                socket = new Socket(serverAddress, serverPort);
+                System.out.println("Connected to the chat server as " + username);
 
-            objectOut = new ObjectOutputStream(socket.getOutputStream());
+                objectOut = new ObjectOutputStream(socket.getOutputStream());
 
-            ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
+                ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
 
-            MessageReceiver receiver = new MessageReceiver(objectIn);
-            new Thread(receiver).start();
+                MessageReceiver receiver = new MessageReceiver(objectIn);
+                new Thread(receiver).start();
+                connected = true;
+            } catch (Exception e) {
+                System.err.println("Error connecting to the server: " + e.getMessage());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    System.err.println("Sleep interrupted: " + ex.getMessage());
+                    System.exit(-1);
+                }
 
-        } catch (Exception e) {
-            System.out.println("Error connecting to the server: " + e.getMessage());
+            }
         }
     }
 
