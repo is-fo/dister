@@ -3,6 +3,7 @@
 package server;
 
 import model.Message;
+import server.gui.ServerGUI;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -13,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ChatServer {
+
+    private ServerGUI serverGUI = new ServerGUI();
 
     private Map<ClientHandler, BlockingQueue<Message>> clientQueues = new ConcurrentHashMap<>();
 
@@ -25,6 +28,9 @@ public class ChatServer {
     }
 
     public void publishMessage(Message message) {
+
+        serverGUI.printLogs(message.getSender().getUsername() + " " + message.getMessage());
+
         for (BlockingQueue<Message> queue : clientQueues.values()) {
             queue.offer(message);
         }
@@ -53,7 +59,7 @@ public class ChatServer {
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {
-            System.out.println("Error starting server: " + e.getMessage());
+            System.err.println("Error starting server: " + e.getMessage());
             e.printStackTrace();
         }
     }
