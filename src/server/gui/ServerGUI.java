@@ -1,5 +1,7 @@
 package server.gui;
 
+import server.ChatServer;
+
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
@@ -11,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Random;
 
 
 /**
@@ -28,8 +31,8 @@ public class ServerGUI {
     public static final Color MINIMIZE = new Color(0x005F00);
     public static final Color INACTIVE = new Color(0x1A1A1A);
 
-    Font OCRA12;
-    Font MATRIX16;
+    public static Font OCRA12;
+    public static Font MATRIX16;
 
     public static final Font ICON = new Font("Consolas", Font.BOLD, 32);
     public static final Font sICON = new Font("Consolas", Font.PLAIN, 28);
@@ -41,16 +44,19 @@ public class ServerGUI {
     JPanel mainPanel = new JPanel();
     JTextArea textArea = new JTextArea();
 
-    public ServerGUI() {
+    ChatServer server;
+
+    public ServerGUI(ChatServer server) {
         initFonts();
         createWindow();
+        this.server = server;
     }
 
     private void initFonts() {
-        String modelRoot = "src/model/";
+        final String FONT_PATH = "src/model/fonts/";
         try {
-            OCRA12 = Font.createFont(0, new File(modelRoot + "OCR-A.ttf")).deriveFont(12f);
-            MATRIX16 = Font.createFont(0, new File(modelRoot + "matrix.ttf")).deriveFont(16f);
+            OCRA12 = Font.createFont(0, new File(FONT_PATH + "OCR-A.ttf")).deriveFont(12f);
+            MATRIX16 = Font.createFont(0, new File(FONT_PATH + "matrix.ttf")).deriveFont(18f);
         } catch (FontFormatException e) {
             System.err.println("FontFormatException: " + e);
             System.exit(0);
@@ -77,8 +83,61 @@ public class ServerGUI {
         textArea = createTextArea();
         mainPanel.add(textArea);
 
+        JTextArea backdrop = createBackDrop(12f);
+        mainPanel.add(backdrop);
+        JTextArea backdrop2 = createBackDrop(16f);
+        mainPanel.add(backdrop2);
+        JTextArea backdrop3 = createBackDrop(20f);
+        mainPanel.add(backdrop3);
+
+        Timer timer = new Timer(16, e -> {
+            matrixText(backdrop);
+            matrixText(backdrop2);
+            matrixText(backdrop3);
+        });
+        timer.start();
 
         window.setVisible(true);
+    }
+
+    private void matrixText(JTextArea textArea) {
+        Random random = new Random();
+        StringBuilder line = new StringBuilder();
+        int maxChars = mainPanel.getWidth() / (int) textArea.getFont().getSize2D() * 2;
+        for (int i = 0; i < maxChars; i++) {
+            if (random.nextInt(100) < 15) {
+                line.append((char) (random.nextInt(26) + 0b11111));
+            } else {
+                line.append(" ");
+            }
+        }
+        line.append("\n");
+
+        try {
+            textArea.getDocument().insertString(0, line.toString(), null);
+        } catch (BadLocationException e) {
+            System.err.println("Matrix error: BadLocationException: " + e);
+        }
+
+        int maxLines = mainPanel.getHeight() / (int) textArea.getFont().getSize2D(); //seems to work
+        if (textArea.getLineCount() > maxLines) {
+            try {
+                textArea.replaceRange("", textArea.getLineEndOffset(maxLines - 1), textArea.getLineEndOffset(maxLines));
+            } catch (BadLocationException e) {
+                System.err.println("Matrix error: BadLocationException: " + e);
+            }
+        }
+    }
+
+    public JTextArea createBackDrop(Float fontSize) {
+        JTextArea backdrop = new JTextArea();
+        backdrop.setEditable(false);
+        backdrop.setForeground(BACKDROP);
+        backdrop.setOpaque(false);                   //space for titlebar + bottom command line (not yet implemented)
+        backdrop.setBounds(0, BUTTON_DIM, WIDTH, mainPanel.getHeight() - (BUTTON_DIM * 2));
+        backdrop.setFont(MATRIX16.deriveFont(fontSize));
+
+        return backdrop;
     }
 
     public void printLogs(String message) {
@@ -115,11 +174,11 @@ public class ServerGUI {
         titlePanel.setBounds(0, 0, WIDTH, BUTTON_DIM);
         titlePanel.setBackground(TITLEBAR);
 
-        JLabel title = new JLabel("pisscord | PISSCORD");
+        JLabel title = new JLabel("pisscord | PISSCORD j");
         title.setFont(MATRIX16);
         title.setForeground(TITLETEXT);
         title.setOpaque(false);
-        title.setBounds(6, -2, title.getText().length() * 16, 32);
+        title.setBounds(6, 2, title.getText().length() * 16, 32);
         titlePanel.add(title);
 
         JPanel buttonPanel = new JPanel();
@@ -256,6 +315,7 @@ public class ServerGUI {
             public void mouseReleased(MouseEvent e) {
                 closeLabel.setFont(ICON);
                 if (closeLabel.contains(e.getPoint())) {
+                    server.close();
                     window.dispose();
                 }
             }
@@ -277,7 +337,7 @@ public class ServerGUI {
     }
 
     public static void main(String[] args) {
-        ServerGUI serverGUI = new ServerGUI();
+        ServerGUI serverGUI = new ServerGUI(null);
         serverGUI.createWindow();
     }
 
