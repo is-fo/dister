@@ -1,50 +1,68 @@
 package server.gui;
 
 import javax.swing.*;
+import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
-import java.io.ObjectInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
+
+/**
+ * TODO implement <a href="https://github.com/java-native-access/jna">this</a> for iconify and dragging
+ */
 public class ServerGUI {
 
-    public static final Color RED = new Color(200, 22, 22);
-    public static final Color BLUE = new Color(22, 155, 233);
-    public static final Color WHITE = new Color(225, 255, 255);
-    public static final Font DEFAULT_FONT = new Font("Consolas", Font.BOLD, 32);
-    public static final Font SMALLER_FONT = new Font("Consolas", Font.PLAIN, 28);
+    public static final Color TITLEBAR = new Color(0x0D0D0D);
+    public static final Color TITLETEXT = new Color(0x39FF14);
+    public static final Color BLACK = new Color(0x000000);
+    public static final Color BACKDROP = new Color(0x003300);
+    public static final Color HACKERTEXT = new Color(0x00FF00);
+
+    public static final Color CLOSE = new Color(200, 22, 22);
+    public static final Color MINIMIZE = new Color(0x005F00);
+    public static final Color INACTIVE = new Color(0x1A1A1A);
+
+    Font OCRA12;
+    Font MATRIX16;
+
+    public static final Font ICON = new Font("Consolas", Font.BOLD, 32);
+    public static final Font sICON = new Font("Consolas", Font.PLAIN, 28);
 
     private final int WIDTH = 600;
     private final int BUTTON_DIM = 32;
 
-    private int pX, pY;
-    Robot robot;
-    {
-        try {
-            robot = new Robot();
-        } catch (AWTException e) {
-            e.printStackTrace();
-            System.exit(110101);
-        }
-    }
-
-    private final String ICON_PATH = "src/server/gui/icons/";
-
     JFrame window = new JFrame("SERVERLOGS");
     JPanel mainPanel = new JPanel();
+    JTextArea textArea = new JTextArea();
 
-    private final ObjectInputStream in;
+    public ServerGUI() {
+        initFonts();
+        createWindow();
+    }
 
-    public ServerGUI(ObjectInputStream in) {
-        this.in = in;
+    private void initFonts() {
+        String modelRoot = "src/model/";
+        try {
+            OCRA12 = Font.createFont(0, new File(modelRoot + "OCR-A.ttf")).deriveFont(12f);
+            MATRIX16 = Font.createFont(0, new File(modelRoot + "matrix.ttf")).deriveFont(16f);
+        } catch (FontFormatException e) {
+            System.err.println("FontFormatException: " + e);
+            System.exit(0);
+        } catch (IOException e) {
+            System.err.println("IOException: " + e);
+            System.exit(0);
+        }
     }
 
     private void createWindow() {
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         window.setLayout(null);
-//        window.setBackground(new Color(33, 33, 33));
         window.setSize(WIDTH, 800);
         window.setLocationRelativeTo(null);
         window.setUndecorated(true);
@@ -52,19 +70,57 @@ public class ServerGUI {
 
         mainPanel.setLayout(null);
         mainPanel.setBounds(0, 0, WIDTH, 800);
-        mainPanel.setBackground(new Color(33, 33, 33));
+        mainPanel.setBackground(BLACK);
 
         mainPanel.add(createCustomTitleBar());
 
+        textArea = createTextArea();
+        mainPanel.add(textArea);
+
 
         window.setVisible(true);
+    }
+
+    public void printLogs(String message) {
+        if (textArea == null) {return;}
+
+        textArea.append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd [HH:mm:ss]")) + " " + message + "\n");
+        if (textArea.getLineCount() > 45) {
+            try {
+                textArea.replaceRange("", 0, textArea.getLineEndOffset(0));
+            } catch (BadLocationException e) {
+                System.err.println("Error removing first line in serverlogs: " + e.getMessage());
+            }
+        }
+    }
+
+    private JTextArea createTextArea() {
+        textArea = new JTextArea();
+        textArea.setEditable(false);
+        textArea.setBackground(window.getBackground());
+        textArea.setVisible(true);
+        textArea.setBounds(0, BUTTON_DIM, WIDTH, mainPanel.getHeight() - BUTTON_DIM);
+        textArea.setAutoscrolls(true);
+        textArea.setOpaque(false);
+
+        textArea.setFont(OCRA12);
+        textArea.setForeground(HACKERTEXT);
+
+        return textArea;
     }
 
     private JPanel createCustomTitleBar() {
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(null);
         titlePanel.setBounds(0, 0, WIDTH, BUTTON_DIM);
-        titlePanel.setBackground(new Color(99, 99, 99));
+        titlePanel.setBackground(TITLEBAR);
+
+        JLabel title = new JLabel("pisscord | PISSCORD");
+        title.setFont(MATRIX16);
+        title.setForeground(TITLETEXT);
+        title.setOpaque(false);
+        title.setBounds(6, -2, title.getText().length() * 16, 32);
+        titlePanel.add(title);
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(null);
@@ -82,8 +138,18 @@ public class ServerGUI {
     }
 
 
+    private int pX, pY;
+    Robot robot;
+    {
+        try {
+            robot = new Robot();
+        } catch (AWTException e) {
+            e.printStackTrace();
+            System.exit(110101);
+        }
+    }
     /**
-     *https://stackoverflow.com/questions/26318474/moving-a-jframe-with-custom-title-bar
+     *<a href="https://stackoverflow.com/questions/26318474/moving-a-jframe-with-custom-title-bar">Code modified from stackoverflow post</a>
      */
     private void enableDraggable(JPanel titlePanel) {
         titlePanel.addMouseListener(new MouseAdapter() {
@@ -120,12 +186,12 @@ public class ServerGUI {
 
     private JLabel minimizeButton() {
         JLabel minimizeLabel = new JLabel("_");
-        minimizeLabel.setBounds(8, -5, 24, BUTTON_DIM);
+        minimizeLabel.setBounds(16, -4, 24, BUTTON_DIM);
         minimizeLabel.setHorizontalTextPosition(SwingConstants.CENTER);
         minimizeLabel.setVerticalTextPosition(SwingConstants.CENTER);
 
-        minimizeLabel.setForeground(WHITE);
-        minimizeLabel.setFont(DEFAULT_FONT);
+        minimizeLabel.setForeground(INACTIVE);
+        minimizeLabel.setFont(ICON);
 
         minimizeLabel.addMouseListener(new MouseListener() {
 
@@ -136,12 +202,12 @@ public class ServerGUI {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                minimizeLabel.setFont(SMALLER_FONT);
+                minimizeLabel.setFont(sICON);
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                minimizeLabel.setFont(DEFAULT_FONT);
+                minimizeLabel.setFont(ICON);
                 if (minimizeLabel.contains(e.getPoint())) {
                     window.setExtendedState(JFrame.ICONIFIED);
                 }
@@ -149,14 +215,14 @@ public class ServerGUI {
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                minimizeLabel.setForeground(BLUE);
+                minimizeLabel.setForeground(MINIMIZE);
                 minimizeLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                minimizeLabel.setForeground(WHITE);
+                minimizeLabel.setForeground(INACTIVE);
                 minimizeLabel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
@@ -167,13 +233,13 @@ public class ServerGUI {
 
     private JLabel createCloseButton() {
         JLabel closeLabel = new JLabel();
-        closeLabel.setBounds(BUTTON_DIM, 2, 24, BUTTON_DIM);
+        closeLabel.setBounds(BUTTON_DIM + 8, 3, 24, BUTTON_DIM);
         closeLabel.setText("x");
         closeLabel.setHorizontalTextPosition(SwingConstants.CENTER);
         closeLabel.setVerticalTextPosition(SwingConstants.CENTER);
 
-        closeLabel.setForeground(WHITE);
-        closeLabel.setFont(DEFAULT_FONT);
+        closeLabel.setForeground(INACTIVE);
+        closeLabel.setFont(ICON);
         closeLabel.addMouseListener(new MouseListener() {
 
             @Override
@@ -183,12 +249,12 @@ public class ServerGUI {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                closeLabel.setFont(SMALLER_FONT);
+                closeLabel.setFont(sICON);
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                closeLabel.setFont(DEFAULT_FONT);
+                closeLabel.setFont(ICON);
                 if (closeLabel.contains(e.getPoint())) {
                     window.dispose();
                 }
@@ -197,13 +263,13 @@ public class ServerGUI {
             @Override
             public void mouseEntered(MouseEvent e) {
                 closeLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                closeLabel.setForeground(RED);
+                closeLabel.setForeground(CLOSE);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 closeLabel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                closeLabel.setForeground(WHITE);
+                closeLabel.setForeground(INACTIVE);
             }
         });
 
@@ -211,7 +277,7 @@ public class ServerGUI {
     }
 
     public static void main(String[] args) {
-        ServerGUI serverGUI = new ServerGUI(null);
+        ServerGUI serverGUI = new ServerGUI();
         serverGUI.createWindow();
     }
 
