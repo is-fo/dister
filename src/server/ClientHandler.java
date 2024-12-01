@@ -3,6 +3,7 @@
 package server;
 
 import model.Message;
+import server.gui.ServerGUI;
 
 import java.io.*;
 import java.net.Socket;
@@ -11,10 +12,10 @@ import java.util.concurrent.BlockingQueue;
 
 public class ClientHandler implements Runnable {
 
-    private Socket clientSocket;
+    private final Socket clientSocket;
     private ObjectInputStream in;
     private ObjectOutputStream out;
-    private ChatServer server;
+    private final ChatServer server;
 
     public ClientHandler(Socket clientSocket, ChatServer server) {
         this.clientSocket = clientSocket;
@@ -23,16 +24,17 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
+
             try {
-            in = new ObjectInputStream(clientSocket.getInputStream());
-            out = new ObjectOutputStream(clientSocket.getOutputStream());
+             in = new ObjectInputStream(clientSocket.getInputStream());
+             out = new ObjectOutputStream(clientSocket.getOutputStream());
 
                 BlockingQueue<Message> queue = server.getMessageQueue(this);
                 new Thread(() -> {
                     try {
                         while (true) {
-                            Object msg = queue.take(); // Block until a message is available
-                            out.writeObject(msg);      // Send message to the client
+                            Object msg = queue.take();
+                            out.writeObject(msg);
                         }
                     } catch (InterruptedException e) {
                         System.err.println("Message sender interrupted for client: " + clientSocket);
@@ -54,15 +56,14 @@ public class ClientHandler implements Runnable {
                 }
 
         } catch (SocketException e) {
-            System.out.println("Client didn't disconnect properly.");
+            System.err.println("Client didn't disconnect properly.");
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Exception when creating I/O connection.");
+            System.err.println("Exception when creating I/O connection.");
         } finally {
             try {
-                if (in != null) {
-                    in.close();
-                }
+                in.close();
+                out.close();
                 if (clientSocket != null) {
                     clientSocket.close();
                 }

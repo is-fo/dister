@@ -11,7 +11,7 @@ public class Message implements Serializable {
     private final User sender;
     private final String message;
     private final LocalTime timestamp;
-    private transient final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private transient final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
     public Message(User sender, String message) {
         this.sender = sender != null ? sender : new User("NULLUSERSPECIAL");

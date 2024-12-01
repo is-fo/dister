@@ -9,7 +9,7 @@ import java.io.ObjectInputStream;
 
 public class MessageReceiver implements Runnable {
 
-    private ObjectInputStream in;
+    private final ObjectInputStream in;
 
     public MessageReceiver(ObjectInputStream in) {
         this.in = in;
@@ -30,6 +30,7 @@ public class MessageReceiver implements Runnable {
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Error reading from server." + e.getMessage());
+            System.exit(1);
         }
     }
 }

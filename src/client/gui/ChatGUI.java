@@ -1,6 +1,6 @@
 // Swing GUI for the chat interface
 
-package client;
+package client.gui;
 
 public class ChatGUI {
 }
