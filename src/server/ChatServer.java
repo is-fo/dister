@@ -2,6 +2,7 @@
 
 package server;
 
+import client.gui.ChatGUI;
 import model.Message;
 import server.gui.ServerGUI;
 
@@ -15,8 +16,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ChatServer {
 
-    private ServerGUI serverGUI = new ServerGUI();
+    private static final int PORT = 12345;
 
+    private final ServerGUI serverGUI = new ServerGUI(this);
     private Map<ClientHandler, BlockingQueue<Message>> clientQueues = new ConcurrentHashMap<>();
 
     public void addClient(ClientHandler client) {
@@ -40,9 +42,23 @@ public class ChatServer {
         return clientQueues.get(clientHandler);
     }
 
-    private static final int PORT = 12345;
+    public void restart() {
+        close();
+        start();
+    }
 
-    public static void main(String[] args) {
+    public void close() {
+        //TODO exit logik
+        serverGUI.printLogs("Shutting down server...");
+        System.out.println("Shutting down server...");
+
+        for (ClientHandler client : clientQueues.keySet()) {
+            client.close();
+        }
+        System.exit(0);
+    }
+
+    private void start() {
         ChatServer server = new ChatServer();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -62,5 +78,8 @@ public class ChatServer {
             System.err.println("Error starting server: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    public static void main(String[] args) {
+        new ChatServer().start();
     }
 }

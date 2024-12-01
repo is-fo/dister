@@ -22,6 +22,22 @@ public class ClientHandler implements Runnable {
         this.server = server;
     }
 
+    public void close() {
+        try {
+            if (out != null) {
+                out.close();
+            }
+            if (in != null) {
+                in.close();
+            }
+            if (clientSocket != null) {
+                clientSocket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Error disconnecting client: " + e.getMessage());
+        }
+    }
+
     @Override
     public void run() {
 
@@ -56,7 +72,7 @@ public class ClientHandler implements Runnable {
                 }
 
         } catch (SocketException e) {
-            System.err.println("Client didn't disconnect properly.");
+            System.err.println("Client disconnected.");
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Exception when creating I/O connection.");
