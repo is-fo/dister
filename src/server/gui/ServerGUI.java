@@ -4,6 +4,9 @@ import server.ChatServer;
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -26,6 +29,7 @@ public class ServerGUI {
     public static final Color BLACK = new Color(0x000000);
     public static final Color BACKDROP = new Color(0x003300);
     public static final Color HACKERTEXT = new Color(0x00FF00);
+    public static final Color TIMESTAMP = new Color(0x07AB1F);
 
     public static final Color CLOSE = new Color(200, 22, 22);
     public static final Color MINIMIZE = new Color(0x005F00);
@@ -38,11 +42,14 @@ public class ServerGUI {
     public static final Font sICON = new Font("Consolas", Font.PLAIN, 28);
 
     private static final int WIDTH = 600;
+    private static final int HEIGHT = 800;
     private static final int BUTTON_DIM = 32;
 
-    private final JFrame window = new JFrame("SERVERLOGS");
-    private final JPanel mainPanel = new JPanel();
-    private JTextArea textArea = new JTextArea();
+    private JFrame window;
+    private JPanel mainPanel;
+    private JTextPane textPane;
+    private StyledDocument styledDoc;
+    private Style logStyle, errorStyle, timeStyle;
 
     private static ServerGUI serverGUI;
     private ChatServer chatServer;
@@ -61,11 +68,22 @@ public class ServerGUI {
         return serverGUI;
     }
 
-    private static void initFonts() {
+    public static ServerGUI getInstance() {
+        if (serverGUI == null) {
+            //TODO ta bort o göra en annan klass för initFonts() och initStyles()
+            throw new NullPointerException("Parameterless constructor only allowed to be used when ServerGUI isn't null.");
+        }
+        return serverGUI;
+    }
+
+    private void initFonts() {
         final String FONT_PATH = "src/model/fonts/";
         try {
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             OCRA12 = Font.createFont(0, new File(FONT_PATH + "OCR-A.ttf")).deriveFont(12f);
+            ge.registerFont(OCRA12);
             MATRIX16 = Font.createFont(0, new File(FONT_PATH + "matrix.ttf")).deriveFont(18f);
+            ge.registerFont(MATRIX16);
         } catch (FontFormatException e) {
             System.err.println("FontFormatException: " + e);
             System.exit(0);
@@ -75,22 +93,41 @@ public class ServerGUI {
         }
     }
 
+    private void initStyles() {
+        styledDoc = textPane.getStyledDocument();
+
+        logStyle = styledDoc.addStyle("log", null);
+        StyleConstants.setForeground(logStyle, HACKERTEXT);
+        StyleConstants.setFontFamily(logStyle, OCRA12.getFamily());
+
+        errorStyle = styledDoc.addStyle("error", null);
+        StyleConstants.setForeground(errorStyle, CLOSE);
+        StyleConstants.setFontFamily(errorStyle, OCRA12.getFamily());
+
+        timeStyle = styledDoc.addStyle("time", null);
+        StyleConstants.setForeground(timeStyle, TIMESTAMP);
+        StyleConstants.setFontFamily(timeStyle, OCRA12.getFamily());
+
+    }
+
     private void createWindow() {
+        window = new JFrame();
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         window.setLayout(null);
-        window.setSize(WIDTH, 800);
+        window.setSize(WIDTH, HEIGHT);
         window.setLocationRelativeTo(null);
         window.setUndecorated(true);
-        window.add(mainPanel);
 
+        mainPanel = new JPanel();
         mainPanel.setLayout(null);
         mainPanel.setBounds(0, 0, WIDTH, 800);
         mainPanel.setBackground(BLACK);
-
+        mainPanel.setVisible(true);
         mainPanel.add(createCustomTitleBar());
 
-        textArea = createTextArea();
-        mainPanel.add(textArea);
+        textPane = createTextPane();
+        styledDoc = textPane.getStyledDocument();
+        mainPanel.add(textPane);
 
         JTextArea backdrop = createBackDrop(12f);
         mainPanel.add(backdrop);
@@ -99,13 +136,13 @@ public class ServerGUI {
         JTextArea backdrop3 = createBackDrop(20f);
         mainPanel.add(backdrop3);
 
-        Timer timer = new Timer(16, e -> {
+        new Timer(40, e -> {
             matrixText(backdrop);
             matrixText(backdrop2);
             matrixText(backdrop3);
-        });
-        timer.start();
+        }).start();
 
+        window.add(mainPanel);
         window.setVisible(true);
     }
 
@@ -141,40 +178,61 @@ public class ServerGUI {
     public JTextArea createBackDrop(Float fontSize) {
         JTextArea backdrop = new JTextArea();
         backdrop.setEditable(false);
-        backdrop.setForeground(BACKDROP);
-        backdrop.setOpaque(false);                   //space for titlebar + bottom command line (not yet implemented)
+        int modifier = (((int) (double)fontSize) - 10) * 8; //lol
+        backdrop.setForeground(new Color(BACKDROP.getRed(), BACKDROP.getGreen() + modifier, BACKDROP.getBlue() + modifier));
+        backdrop.setOpaque(false);                   //space for titlebar + bottom command line
         backdrop.setBounds(0, BUTTON_DIM, WIDTH, mainPanel.getHeight() - (BUTTON_DIM * 2));
         backdrop.setFont(MATRIX16.deriveFont(fontSize));
 
         return backdrop;
     }
 
-    public void printLogs(String message) {
-        if (textArea == null) {return;}
+    public void printErrors(String error) {
+        printMessageWithStyle(error, errorStyle);
+    }
 
-        textArea.append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd [HH:mm:ss]")) + " " + message + "\n");
-        if (textArea.getLineCount() > 45) {
-            try {
-                textArea.replaceRange("", 0, textArea.getLineEndOffset(0));
-            } catch (BadLocationException e) {
-                System.err.println("Error removing first line in serverlogs: " + e.getMessage());
+    public void printLogs(String message) {
+        printMessageWithStyle(message, logStyle);
+    }
+
+    private void printMessageWithStyle(String message, Style style) {
+        if (textPane == null) {
+            System.err.println("TextPane is null");
+            return;
+        }
+
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd [HH:mm:ss]"));
+        try {
+            styledDoc.insertString(styledDoc.getLength(), timestamp + " ", timeStyle);
+            styledDoc.insertString(styledDoc.getLength(), message + "\n", style);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+
+        limitLineCount(window.getHeight() / ((int)OCRA12.getSize2D() + 3));
+    }
+    private void limitLineCount(int limit) {
+        try {
+            int totalLines = textPane.getDocument().getDefaultRootElement().getElementCount();
+            if (totalLines > limit) {
+                int end = textPane.getDocument().getDefaultRootElement().getElement(0).getEndOffset();
+                styledDoc.remove(0, end);
             }
+        } catch (BadLocationException e) {
+            e.printStackTrace();
         }
     }
 
-    private JTextArea createTextArea() {
-        textArea = new JTextArea();
-        textArea.setEditable(false);
-        textArea.setBackground(window.getBackground());
-        textArea.setVisible(true);
-        textArea.setBounds(0, BUTTON_DIM, WIDTH, mainPanel.getHeight() - BUTTON_DIM);
-        textArea.setAutoscrolls(true);
-        textArea.setOpaque(false);
+    private JTextPane createTextPane() {
+        textPane = new JTextPane();
+        textPane.setEditable(false);
+        textPane.setBackground(window.getBackground());
+        textPane.setVisible(true);
+        textPane.setBounds(0, BUTTON_DIM, WIDTH, mainPanel.getHeight() - BUTTON_DIM);
+        initStyles();
+        textPane.setOpaque(false);
 
-        textArea.setFont(OCRA12);
-        textArea.setForeground(HACKERTEXT);
-
-        return textArea;
+        return textPane;
     }
 
     private JPanel createCustomTitleBar() {
@@ -326,7 +384,7 @@ public class ServerGUI {
                 if (closeLabel.contains(e.getPoint())) {
                     serverGUI = null;
                     chatServer.close();
-//                    window.dispose();
+                    window.dispose();
                 }
             }
 
