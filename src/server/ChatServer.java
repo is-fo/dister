@@ -2,7 +2,6 @@
 
 package server;
 
-import client.gui.ChatGUI;
 import model.Message;
 import server.gui.ServerGUI;
 
@@ -16,9 +15,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ChatServer {
 
+    private ServerGUI serverGUI;
+
     private static final int PORT = 12345;
 
-    private final ServerGUI serverGUI = new ServerGUI(this);
     private Map<ClientHandler, BlockingQueue<Message>> clientQueues = new ConcurrentHashMap<>();
 
     public void addClient(ClientHandler client) {
@@ -31,7 +31,15 @@ public class ChatServer {
 
     public void publishMessage(Message message) {
 
-        serverGUI.printLogs(message.getSender().getUsername() + " " + message.getMessage());
+
+        if (serverGUI != null) {
+            serverGUI.printLogs(message.getSender().getUsername() + " " + message.getMessage());
+        } else {
+            System.out.println("ny instans");
+            serverGUI = ServerGUI.getInstance(this);
+            serverGUI.printLogs(message.getSender().getUsername() + " " + message.getMessage());
+        }
+
 
         for (BlockingQueue<Message> queue : clientQueues.values()) {
             queue.offer(message);
@@ -49,17 +57,20 @@ public class ChatServer {
 
     public void close() {
         //TODO exit logik
-        serverGUI.printLogs("Shutting down server...");
-        System.out.println("Shutting down server...");
+
+        serverGUI.printLogs("Disconnecting clients...");
 
         for (ClientHandler client : clientQueues.keySet()) {
             client.close();
         }
-        System.exit(0);
+        serverGUI.printLogs("Shutting down server... (TODO)");
+        System.out.println("Shutting down server...");
+//        System.exit(0);
     }
 
     private void start() {
         ChatServer server = new ChatServer();
+        //serverGUI = ServerGUI.getInstance(this);
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Chat server started on port " + PORT);

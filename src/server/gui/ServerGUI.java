@@ -37,22 +37,31 @@ public class ServerGUI {
     public static final Font ICON = new Font("Consolas", Font.BOLD, 32);
     public static final Font sICON = new Font("Consolas", Font.PLAIN, 28);
 
-    private final int WIDTH = 600;
-    private final int BUTTON_DIM = 32;
+    private static final int WIDTH = 600;
+    private static final int BUTTON_DIM = 32;
 
-    JFrame window = new JFrame("SERVERLOGS");
-    JPanel mainPanel = new JPanel();
-    JTextArea textArea = new JTextArea();
+    private final JFrame window = new JFrame("SERVERLOGS");
+    private final JPanel mainPanel = new JPanel();
+    private JTextArea textArea = new JTextArea();
 
-    ChatServer server;
+    private static ServerGUI serverGUI;
+    private ChatServer chatServer;
 
-    public ServerGUI(ChatServer server) {
+    private ServerGUI(ChatServer chatServer) {
+        this.chatServer = chatServer;
         initFonts();
         createWindow();
-        this.server = server;
     }
 
-    private void initFonts() {
+    public static ServerGUI getInstance(ChatServer chatServer) {
+        if (serverGUI == null) {
+            serverGUI = new ServerGUI(chatServer);
+        }
+
+        return serverGUI;
+    }
+
+    private static void initFonts() {
         final String FONT_PATH = "src/model/fonts/";
         try {
             OCRA12 = Font.createFont(0, new File(FONT_PATH + "OCR-A.ttf")).deriveFont(12f);
@@ -174,7 +183,7 @@ public class ServerGUI {
         titlePanel.setBounds(0, 0, WIDTH, BUTTON_DIM);
         titlePanel.setBackground(TITLEBAR);
 
-        JLabel title = new JLabel("pisscord | PISSCORD j");
+        JLabel title = new JLabel("pisscord | PISSCORD j SCUFFED SERVERLOGS");
         title.setFont(MATRIX16);
         title.setForeground(TITLETEXT);
         title.setOpaque(false);
@@ -197,8 +206,8 @@ public class ServerGUI {
     }
 
 
-    private int pX, pY;
-    Robot robot;
+    private static int pX, pY;
+    private static Robot robot;
     {
         try {
             robot = new Robot();
@@ -315,8 +324,9 @@ public class ServerGUI {
             public void mouseReleased(MouseEvent e) {
                 closeLabel.setFont(ICON);
                 if (closeLabel.contains(e.getPoint())) {
-                    server.close();
-                    window.dispose();
+                    serverGUI = null;
+                    chatServer.close();
+//                    window.dispose();
                 }
             }
 
@@ -335,11 +345,5 @@ public class ServerGUI {
 
         return closeLabel;
     }
-
-    public static void main(String[] args) {
-        ServerGUI serverGUI = new ServerGUI(null);
-        serverGUI.createWindow();
-    }
-
 
 }
