@@ -17,9 +17,12 @@ public class ClientHandler implements Runnable {
     private ObjectOutputStream out;
     private final ChatServer server;
 
+    private ServerGUI serverGUI;
+
     public ClientHandler(Socket clientSocket, ChatServer server) {
         this.clientSocket = clientSocket;
         this.server = server;
+        serverGUI = ServerGUI.getInstance(server);
     }
 
     public void close() {
@@ -34,7 +37,7 @@ public class ClientHandler implements Runnable {
                 clientSocket.close();
             }
         } catch (IOException e) {
-            System.err.println("Error disconnecting client: " + e.getMessage());
+            serverGUI.printErrors("Error disconnecting client: " + e.getMessage());
         }
     }
 
@@ -53,9 +56,9 @@ public class ClientHandler implements Runnable {
                             out.writeObject(msg);
                         }
                     } catch (InterruptedException e) {
-                        System.err.println("Message sender interrupted for client: " + clientSocket);
+                        serverGUI.printErrors("Message sender interrupted for client: " + clientSocket);
                     } catch (IOException e) {
-                        System.err.println("Message sender IOException for client: " + clientSocket);
+                        serverGUI.printErrors("Message sender IOException for client: " + clientSocket);
                     }
                 }).start();
 
@@ -64,18 +67,17 @@ public class ClientHandler implements Runnable {
                     while ((message = in.readObject()) != null) {
                         if (message instanceof Message msg) {
                             server.publishMessage(msg);
-                            System.out.println(new Message(msg.getSender(), msg.getMessage()));
                         }
                     }
                 } catch (ClassNotFoundException e) {
-                    System.err.println("Message class not found for client: " + clientSocket);
+                    serverGUI.printErrors("Message class not found for client: " + clientSocket);
                 }
 
         } catch (SocketException e) {
-            System.err.println("Client disconnected.");
+                serverGUI.printErrors("SocketException for client: " + clientSocket);
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("Exception when creating I/O connection.");
+            serverGUI.printErrors("Exception when creating I/O connection.");
         } finally {
             try {
                 in.close();
@@ -86,7 +88,7 @@ public class ClientHandler implements Runnable {
                 server.removeClient(this);
             } catch (IOException e) {
                 e.printStackTrace();
-                System.err.println("Error when closing streams or socket.");
+                serverGUI.printErrors("Error when closing streams or socket.");
             }
         }
     }

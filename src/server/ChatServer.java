@@ -31,15 +31,12 @@ public class ChatServer {
 
     public void publishMessage(Message message) {
 
-
         if (serverGUI != null) {
             serverGUI.printLogs(message.getSender().getUsername() + " " + message.getMessage());
         } else {
-            System.out.println("ny instans");
             serverGUI = ServerGUI.getInstance(this);
             serverGUI.printLogs(message.getSender().getUsername() + " " + message.getMessage());
         }
-
 
         for (BlockingQueue<Message> queue : clientQueues.values()) {
             queue.offer(message);
@@ -57,27 +54,26 @@ public class ChatServer {
 
     public void close() {
         //TODO exit logik
-
         serverGUI.printLogs("Disconnecting clients...");
 
         for (ClientHandler client : clientQueues.keySet()) {
             client.close();
+            removeClient(client);
         }
         serverGUI.printLogs("Shutting down server... (TODO)");
-        System.out.println("Shutting down server...");
-//        System.exit(0);
+        System.exit(Integer.MAX_VALUE);
     }
 
     private void start() {
         ChatServer server = new ChatServer();
-        //serverGUI = ServerGUI.getInstance(this);
+        serverGUI = ServerGUI.getInstance(this);
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("Chat server started on port " + PORT);
+            serverGUI.printLogs("Chat server started on port " + PORT);
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("New client connected");
+                serverGUI.printLogs("New client connected");
 
                 ClientHandler clientHandler = new ClientHandler(clientSocket, server);
 
@@ -86,10 +82,11 @@ public class ChatServer {
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {
-            System.err.println("Error starting server: " + e.getMessage());
+            serverGUI.printErrors("Error starting server: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
     public static void main(String[] args) {
         new ChatServer().start();
     }
