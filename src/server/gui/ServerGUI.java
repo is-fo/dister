@@ -41,9 +41,9 @@ public class ServerGUI {
     public static final Font ICON = new Font("Consolas", Font.BOLD, 32);
     public static final Font sICON = new Font("Consolas", Font.PLAIN, 28);
 
-    private static final int WIDTH = 600;
-    private static final int HEIGHT = 800;
-    private static final int BUTTON_DIM = 32;
+    public static final int WIDTH = 600;
+    public static final int HEIGHT = 800;
+    public static final int BUTTON_DIM = 32;
 
     private JFrame window;
     private JPanel mainPanel;
@@ -129,62 +129,10 @@ public class ServerGUI {
         styledDoc = textPane.getStyledDocument();
         mainPanel.add(textPane);
 
-        JTextArea backdrop = createBackDrop(12f);
-        mainPanel.add(backdrop);
-        JTextArea backdrop2 = createBackDrop(16f);
-        mainPanel.add(backdrop2);
-        JTextArea backdrop3 = createBackDrop(20f);
-        mainPanel.add(backdrop3);
-
-        new Timer(40, e -> {
-            matrixText(backdrop);
-            matrixText(backdrop2);
-            matrixText(backdrop3);
-        }).start();
+        new MatrixBackdrop().startMatrixText(mainPanel);
 
         window.add(mainPanel);
         window.setVisible(true);
-    }
-
-    private void matrixText(JTextArea textArea) {
-        Random random = new Random();
-        StringBuilder line = new StringBuilder();
-        int maxChars = mainPanel.getWidth() / (int) textArea.getFont().getSize2D() * 2;
-        for (int i = 0; i < maxChars; i++) {
-            if (random.nextInt(100) < 15) {
-                line.append((char) (random.nextInt(26) + 0b11111));
-            } else {
-                line.append(" ");
-            }
-        }
-        line.append("\n");
-
-        try {
-            textArea.getDocument().insertString(0, line.toString(), null);
-        } catch (BadLocationException e) {
-            System.err.println("Matrix error: BadLocationException: " + e);
-        }
-
-        int maxLines = mainPanel.getHeight() / (int) textArea.getFont().getSize2D(); //seems to work
-        if (textArea.getLineCount() > maxLines) {
-            try {
-                textArea.replaceRange("", textArea.getLineEndOffset(maxLines - 1), textArea.getLineEndOffset(maxLines));
-            } catch (BadLocationException e) {
-                System.err.println("Matrix error: BadLocationException: " + e);
-            }
-        }
-    }
-
-    public JTextArea createBackDrop(Float fontSize) {
-        JTextArea backdrop = new JTextArea();
-        backdrop.setEditable(false);
-        int modifier = (((int) (double)fontSize) - 10) * 8; //lol
-        backdrop.setForeground(new Color(BACKDROP.getRed(), BACKDROP.getGreen() + modifier, BACKDROP.getBlue() + modifier));
-        backdrop.setOpaque(false);                   //space for titlebar + bottom command line
-        backdrop.setBounds(0, BUTTON_DIM, WIDTH, mainPanel.getHeight() - (BUTTON_DIM * 2));
-        backdrop.setFont(MATRIX16.deriveFont(fontSize));
-
-        return backdrop;
     }
 
     public void printErrors(String error) {
