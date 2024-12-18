@@ -39,7 +39,7 @@ public class MatrixBackdrop {
     public void startMatrixText(JPanel target, int amount, int delay) {
         float[] fontSizes = new float[amount];
         for (int i = 0; i < amount; i++) {
-            fontSizes[i] = new Random().nextInt(32) + 1;
+            fontSizes[i] = new Random().nextInt(32) + 4;
         }
         startMatrixText(target, amount, fontSizes, delay);
     }
@@ -87,6 +87,7 @@ public class MatrixBackdrop {
         JTextArea backdrop = new JTextArea();
         backdrop.setEditable(false);
         int modifier = (((int) (double)fontSize) - 10) * 8; //lol
+        modifier = modifier > 255 ? 255 : 0;
         backdrop.setForeground(new Color(BACKDROP.getRed(), BACKDROP.getGreen() + modifier, BACKDROP.getBlue() + modifier));
         backdrop.setOpaque(false);                   //space for titlebar + bottom command line
         backdrop.setBounds(0, BUTTON_DIM, WIDTH, HEIGHT - (BUTTON_DIM * 2));
