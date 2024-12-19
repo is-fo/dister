@@ -8,7 +8,6 @@ import java.util.Random;
 import static server.gui.ServerGUI.*;
 
 public class MatrixBackdrop {
-
     /**
      *
      * @param target the panel to add the falling text effect to
@@ -87,7 +86,8 @@ public class MatrixBackdrop {
         JTextArea backdrop = new JTextArea();
         backdrop.setEditable(false);
         int modifier = (((int) (double)fontSize) - 10) * 8; //lol
-        modifier = modifier > 255 ? 255 : 0;
+        modifier = modifier > 255 ? 255 : modifier;
+        System.out.println(modifier);
         backdrop.setForeground(new Color(BACKDROP.getRed(), BACKDROP.getGreen() + modifier, BACKDROP.getBlue() + modifier));
         backdrop.setOpaque(false);                   //space for titlebar + bottom command line
         backdrop.setBounds(0, BUTTON_DIM, WIDTH, HEIGHT - (BUTTON_DIM * 2));
