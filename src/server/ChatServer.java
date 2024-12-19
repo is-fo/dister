@@ -32,10 +32,10 @@ public class ChatServer {
     public void publishMessage(Message message) {
 
         if (serverGUI != null) {
-            serverGUI.printLogs(message.getSender().getUsername() + " " + message.getMessage());
+            serverGUI.getServerlogPrinter().printLogs(message.getSender().getUsername() + " " + message.getMessage());
         } else {
             serverGUI = ServerGUI.getInstance(this);
-            serverGUI.printLogs(message.getSender().getUsername() + " " + message.getMessage());
+            serverGUI.getServerlogPrinter().printLogs(message.getSender().getUsername() + " " + message.getMessage());
         }
 
         for (BlockingQueue<Message> queue : clientQueues.values()) {
@@ -54,13 +54,13 @@ public class ChatServer {
 
     public void close() {
         //TODO exit logik
-        serverGUI.printLogs("Disconnecting clients...");
+        serverGUI.getServerlogPrinter().printLogs("Disconnecting clients...");
 
         for (ClientHandler client : clientQueues.keySet()) {
             client.close();
             removeClient(client);
         }
-        serverGUI.printLogs("Shutting down server... (TODO)");
+        serverGUI.getServerlogPrinter().printLogs("Shutting down server... (TODO)");
         System.exit(Integer.MAX_VALUE);
     }
 
@@ -69,11 +69,11 @@ public class ChatServer {
         serverGUI = ServerGUI.getInstance(this);
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            serverGUI.printLogs("Chat server started on port " + PORT);
+            serverGUI.getServerlogPrinter().printLogs("Chat server started on port " + PORT);
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                serverGUI.printLogs("New client connected");
+                serverGUI.getServerlogPrinter().printLogs("New client connected");
 
                 ClientHandler clientHandler = new ClientHandler(clientSocket, server);
 
@@ -82,7 +82,7 @@ public class ChatServer {
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {
-            serverGUI.printErrors("Error starting server: " + e.getMessage());
+            serverGUI.getServerlogPrinter().printErrors("Error starting server: " + e.getMessage());
             e.printStackTrace();
         }
     }

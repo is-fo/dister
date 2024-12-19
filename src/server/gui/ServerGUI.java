@@ -3,7 +3,6 @@ package server.gui;
 import server.ChatServer;
 
 import javax.swing.*;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -14,10 +13,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Random;
-
 
 /**
  * TODO implement <a href="https://github.com/java-native-access/jna">this</a> for iconify and dragging
@@ -48,11 +43,12 @@ public class ServerGUI {
     private JFrame window;
     private JPanel mainPanel;
     private JTextPane textPane;
-    private StyledDocument styledDoc;
-    private Style logStyle, errorStyle, timeStyle;
+    public static StyledDocument styledDoc;
+    public static Style logStyle, errorStyle, timeStyle;
 
     private static ServerGUI serverGUI;
     private ChatServer chatServer;
+    private ServerlogPrinter serverlogPrinter;
 
     private ServerGUI(ChatServer chatServer) {
         this.chatServer = chatServer;
@@ -68,12 +64,8 @@ public class ServerGUI {
         return serverGUI;
     }
 
-    public static ServerGUI getInstance() {
-        if (serverGUI == null) {
-            //TODO ta bort o göra en annan klass för initFonts() och initStyles()
-            throw new NullPointerException("Parameterless constructor only allowed to be used when ServerGUI isn't null.");
-        }
-        return serverGUI;
+    public ServerlogPrinter getServerlogPrinter() {
+        return serverlogPrinter;
     }
 
     private void initFonts() {
@@ -127,48 +119,13 @@ public class ServerGUI {
 
         textPane = createTextPane();
         styledDoc = textPane.getStyledDocument();
+        serverlogPrinter = ServerlogPrinter.getInstance(textPane);
         mainPanel.add(textPane);
 
         new MatrixBackdrop().startMatrixText(mainPanel);
 
         window.add(mainPanel);
         window.setVisible(true);
-    }
-
-    public void printErrors(String error) {
-        printMessageWithStyle(error, errorStyle);
-    }
-
-    public void printLogs(String message) {
-        printMessageWithStyle(message, logStyle);
-    }
-
-    private void printMessageWithStyle(String message, Style style) {
-        if (textPane == null) {
-            System.err.println("TextPane is null");
-            return;
-        }
-
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd [HH:mm:ss]"));
-        try {
-            styledDoc.insertString(styledDoc.getLength(), timestamp + " ", timeStyle);
-            styledDoc.insertString(styledDoc.getLength(), message + "\n", style);
-        } catch (BadLocationException e) {
-            e.printStackTrace();
-        }
-
-        limitLineCount(window.getHeight() / ((int)OCRA12.getSize2D() + 3));
-    }
-    private void limitLineCount(int limit) {
-        try {
-            int totalLines = textPane.getDocument().getDefaultRootElement().getElementCount();
-            if (totalLines > limit) {
-                int end = textPane.getDocument().getDefaultRootElement().getElement(0).getEndOffset();
-                styledDoc.remove(0, end);
-            }
-        } catch (BadLocationException e) {
-            e.printStackTrace();
-        }
     }
 
     private JTextPane createTextPane() {
@@ -213,15 +170,6 @@ public class ServerGUI {
 
 
     private static int pX, pY;
-    private static Robot robot;
-    {
-        try {
-            robot = new Robot();
-        } catch (AWTException e) {
-            e.printStackTrace();
-            System.exit(110101);
-        }
-    }
     /**
      *<a href="https://stackoverflow.com/questions/26318474/moving-a-jframe-with-custom-title-bar">Code modified from stackoverflow post</a>
      */
@@ -232,6 +180,12 @@ public class ServerGUI {
             public void mousePressed(MouseEvent e) {
                 pX = e.getX();
                 pY = e.getY();
+                titlePanel.setCursor(new Cursor(Cursor.MOVE_CURSOR));
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                titlePanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
 
@@ -245,11 +199,7 @@ public class ServerGUI {
                     int newY = window.getLocation().y + e.getY() - pY;
 
                     int w11TaskBarYLocation = Toolkit.getDefaultToolkit().getScreenSize().height - 78;
-                    if (newY <= 0) {
-                        robot.mouseMove(window.getLocation().x + pX, window.getLocation().y + pY);
-                        newY = 0;
-                    } else if (newY > w11TaskBarYLocation) {
-                        robot.mouseMove(window.getLocation().x + pX, window.getLocation().y + pY);
+                    if (newY > w11TaskBarYLocation) {
                         newY = w11TaskBarYLocation;
                     }
                     window.setLocation(newX, newY);
@@ -303,7 +253,6 @@ public class ServerGUI {
 
         return minimizeLabel;
     }
-
 
     private JLabel createCloseButton() {
         JLabel closeLabel = new JLabel();

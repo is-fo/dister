@@ -37,7 +37,7 @@ public class ClientHandler implements Runnable {
                 clientSocket.close();
             }
         } catch (IOException e) {
-            serverGUI.printErrors("Error disconnecting client: " + e.getMessage());
+            serverGUI.getServerlogPrinter().printErrors("Error disconnecting client: " + e.getMessage());
         }
     }
 
@@ -56,9 +56,9 @@ public class ClientHandler implements Runnable {
                             out.writeObject(msg);
                         }
                     } catch (InterruptedException e) {
-                        serverGUI.printErrors("Message sender interrupted for client: " + clientSocket);
+                        serverGUI.getServerlogPrinter().printErrors("Message sender interrupted for client: " + clientSocket);
                     } catch (IOException e) {
-                        serverGUI.printErrors("Message sender IOException for client: " + clientSocket);
+                        serverGUI.getServerlogPrinter().printErrors("Message sender IOException for client: " + clientSocket);
                     }
                 }).start();
 
@@ -70,14 +70,14 @@ public class ClientHandler implements Runnable {
                         }
                     }
                 } catch (ClassNotFoundException e) {
-                    serverGUI.printErrors("Message class not found for client: " + clientSocket);
+                    serverGUI.getServerlogPrinter().printErrors("Message class not found for client: " + clientSocket);
                 }
 
         } catch (SocketException e) {
-                serverGUI.printErrors("SocketException for client: " + clientSocket);
+                serverGUI.getServerlogPrinter().printErrors("SocketException for client: " + clientSocket);
         } catch (IOException e) {
             e.printStackTrace();
-            serverGUI.printErrors("Exception when creating I/O connection.");
+            serverGUI.getServerlogPrinter().printErrors("Exception when creating I/O connection.");
         } finally {
             try {
                 in.close();
@@ -88,7 +88,7 @@ public class ClientHandler implements Runnable {
                 server.removeClient(this);
             } catch (IOException e) {
                 e.printStackTrace();
-                serverGUI.printErrors("Error when closing streams or socket.");
+                serverGUI.getServerlogPrinter().printErrors("Error when closing streams or socket.");
             }
         }
     }
