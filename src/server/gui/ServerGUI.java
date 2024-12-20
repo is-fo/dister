@@ -7,16 +7,9 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionAdapter;
 import java.io.File;
 import java.io.IOException;
 
-/**
- * TODO implement <a href="https://github.com/java-native-access/jna">this</a> for iconify and dragging
- */
 public class ServerGUI {
 
     public static final Color TITLEBAR = new Color(0x0D0D0D);
@@ -30,8 +23,8 @@ public class ServerGUI {
     public static final Color MINIMIZE = new Color(0x005F00);
     public static final Color INACTIVE = new Color(0x1A1A1A);
 
-    public static Font OCRA12;
-    public static Font MATRIX16;
+    protected static Font OCRA12;
+    protected static Font MATRIX16;
 
     public static final Font ICON = new Font("Consolas", Font.BOLD, 32);
     public static final Font sICON = new Font("Consolas", Font.PLAIN, 28);
@@ -140,6 +133,8 @@ public class ServerGUI {
         return textPane;
     }
 
+
+    //TODO clean up this mess XD
     private JPanel createCustomTitleBar() {
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(null);
@@ -153,152 +148,15 @@ public class ServerGUI {
         title.setBounds(6, 2, title.getText().length() * 16, 32);
         titlePanel.add(title);
 
-        JPanel buttonPanel = new JPanel();
+        JPanel buttonPanel = new TitleBar(window);
         buttonPanel.setLayout(null);
         buttonPanel.setBounds(WIDTH - (BUTTON_DIM * 2), 0, ( 2 * BUTTON_DIM), BUTTON_DIM);
 
-        buttonPanel.add(minimizeButton());
-        buttonPanel.add(createCloseButton());
-
-        enableDraggable(titlePanel);
+        new Draggable(window).enableDraggable(titlePanel);
 
         buttonPanel.setOpaque(false);
         titlePanel.add(buttonPanel);
         titlePanel.setVisible(true);
         return titlePanel;
     }
-
-
-    private static int pX, pY;
-    /**
-     *<a href="https://stackoverflow.com/questions/26318474/moving-a-jframe-with-custom-title-bar">Code modified from stackoverflow post</a>
-     */
-    private void enableDraggable(JPanel titlePanel) {
-        titlePanel.addMouseListener(new MouseAdapter() {
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                pX = e.getX();
-                pY = e.getY();
-                titlePanel.setCursor(new Cursor(Cursor.MOVE_CURSOR));
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                titlePanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            }
-        });
-
-        titlePanel.addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-
-                SwingUtilities.invokeLater(() -> {
-
-                    int newX = window.getLocation().x + e.getX() - pX;
-                    int newY = window.getLocation().y + e.getY() - pY;
-
-                    int w11TaskBarYLocation = Toolkit.getDefaultToolkit().getScreenSize().height - 78;
-                    if (newY > w11TaskBarYLocation) {
-                        newY = w11TaskBarYLocation;
-                    }
-                    window.setLocation(newX, newY);
-                });
-            }
-        });
-    }
-
-    private JLabel minimizeButton() {
-        JLabel minimizeLabel = new JLabel("_");
-        minimizeLabel.setBounds(16, -4, 24, BUTTON_DIM);
-        minimizeLabel.setHorizontalTextPosition(SwingConstants.CENTER);
-        minimizeLabel.setVerticalTextPosition(SwingConstants.CENTER);
-
-        minimizeLabel.setForeground(INACTIVE);
-        minimizeLabel.setFont(ICON);
-
-        minimizeLabel.addMouseListener(new MouseListener() {
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                minimizeLabel.setFont(sICON);
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                minimizeLabel.setFont(ICON);
-                if (minimizeLabel.contains(e.getPoint())) {
-                    window.setExtendedState(JFrame.ICONIFIED);
-                }
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                minimizeLabel.setForeground(MINIMIZE);
-                minimizeLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                minimizeLabel.setForeground(INACTIVE);
-                minimizeLabel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            }
-        });
-
-        return minimizeLabel;
-    }
-
-    private JLabel createCloseButton() {
-        JLabel closeLabel = new JLabel();
-        closeLabel.setBounds(BUTTON_DIM + 8, 3, 24, BUTTON_DIM);
-        closeLabel.setText("x");
-        closeLabel.setHorizontalTextPosition(SwingConstants.CENTER);
-        closeLabel.setVerticalTextPosition(SwingConstants.CENTER);
-
-        closeLabel.setForeground(INACTIVE);
-        closeLabel.setFont(ICON);
-        closeLabel.addMouseListener(new MouseListener() {
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                closeLabel.setFont(sICON);
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                closeLabel.setFont(ICON);
-                if (closeLabel.contains(e.getPoint())) {
-                    serverGUI = null;
-                    chatServer.close();
-                    window.dispose();
-                }
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                closeLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                closeLabel.setForeground(CLOSE);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                closeLabel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                closeLabel.setForeground(INACTIVE);
-            }
-        });
-
-        return closeLabel;
-    }
-
 }

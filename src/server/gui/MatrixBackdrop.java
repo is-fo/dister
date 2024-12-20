@@ -48,7 +48,7 @@ public class MatrixBackdrop {
      * @param target adds a default matrix text effect to target panel
      */
     public void startMatrixText(JPanel target) {
-        startMatrixText(target, 3, new float[]{12f, 16f, 20f}, 40);
+        startMatrixText(target, 3, new float[]{14f, 16f, 20f}, 36);
     }
 
     private void matrixText(JTextArea textArea) {
