@@ -22,7 +22,7 @@ public class ClientHandler implements Runnable {
     public ClientHandler(Socket clientSocket, ChatServer server) {
         this.clientSocket = clientSocket;
         this.server = server;
-        serverGUI = ServerGUI.getInstance(server);
+        serverGUI = ServerGUI.getInstance();
     }
 
     public void close() {

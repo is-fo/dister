@@ -34,7 +34,7 @@ public class ChatServer {
         if (serverGUI != null) {
             serverGUI.getServerlogPrinter().printLogs(message.getSender().getUsername() + " " + message.getMessage());
         } else {
-            serverGUI = ServerGUI.getInstance(this);
+            serverGUI = ServerGUI.getInstance();
             serverGUI.getServerlogPrinter().printLogs(message.getSender().getUsername() + " " + message.getMessage());
         }
 
@@ -66,7 +66,7 @@ public class ChatServer {
 
     private void start() {
         ChatServer server = new ChatServer();
-        serverGUI = ServerGUI.getInstance(this);
+        serverGUI = ServerGUI.getInstance();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             serverGUI.getServerlogPrinter().printLogs("Chat server started on port " + PORT);

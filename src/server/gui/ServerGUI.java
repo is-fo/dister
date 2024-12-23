@@ -1,12 +1,8 @@
 package server.gui;
 
-import server.ChatServer;
-
 import javax.swing.*;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
 import java.io.File;
 import java.io.IOException;
 
@@ -26,39 +22,27 @@ public class ServerGUI {
     protected static Font OCRA12;
     protected static Font MATRIX16;
 
-    public static final Font ICON = new Font("Consolas", Font.BOLD, 32);
-    public static final Font sICON = new Font("Consolas", Font.PLAIN, 28);
-
     public static final int WIDTH = 600;
     public static final int HEIGHT = 800;
-    public static final int BUTTON_DIM = 32;
-
-    private JFrame window;
-    private JPanel mainPanel;
-    private JTextPane textPane;
-    public static StyledDocument styledDoc;
-    public static Style logStyle, errorStyle, timeStyle;
 
     private static ServerGUI serverGUI;
-    private ChatServer chatServer;
-    private ServerlogPrinter serverlogPrinter;
+    private LogPanel logPanel;
 
-    private ServerGUI(ChatServer chatServer) {
-        this.chatServer = chatServer;
+    private ServerGUI() {
         initFonts();
         createWindow();
     }
 
-    public static ServerGUI getInstance(ChatServer chatServer) {
+    public static ServerGUI getInstance() {
         if (serverGUI == null) {
-            serverGUI = new ServerGUI(chatServer);
+            serverGUI = new ServerGUI();
         }
 
         return serverGUI;
     }
 
     public ServerlogPrinter getServerlogPrinter() {
-        return serverlogPrinter;
+        return logPanel.getServerlogPrinter();
     }
 
     private void initFonts() {
@@ -78,85 +62,33 @@ public class ServerGUI {
         }
     }
 
-    private void initStyles() {
-        styledDoc = textPane.getStyledDocument();
-
-        logStyle = styledDoc.addStyle("log", null);
-        StyleConstants.setForeground(logStyle, HACKERTEXT);
-        StyleConstants.setFontFamily(logStyle, OCRA12.getFamily());
-
-        errorStyle = styledDoc.addStyle("error", null);
-        StyleConstants.setForeground(errorStyle, CLOSE);
-        StyleConstants.setFontFamily(errorStyle, OCRA12.getFamily());
-
-        timeStyle = styledDoc.addStyle("time", null);
-        StyleConstants.setForeground(timeStyle, TIMESTAMP);
-        StyleConstants.setFontFamily(timeStyle, OCRA12.getFamily());
-
-    }
-
     private void createWindow() {
-        window = new JFrame();
+        JFrame window = new JFrame("dister");
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        window.setLayout(null);
-        window.setSize(WIDTH, HEIGHT);
+        window.setLayout(new BorderLayout());
+        window.setSize(WIDTH, HEIGHT - 1);
+        window.setMinimumSize(new Dimension(200, 200));
         window.setLocationRelativeTo(null);
-        window.setUndecorated(true);
-
-        mainPanel = new JPanel();
-        mainPanel.setLayout(null);
-        mainPanel.setBounds(0, 0, WIDTH, 800);
-        mainPanel.setBackground(BLACK);
-        mainPanel.setVisible(true);
-        mainPanel.add(createCustomTitleBar());
-
-        textPane = createTextPane();
-        styledDoc = textPane.getStyledDocument();
-        serverlogPrinter = ServerlogPrinter.getInstance(textPane);
-        mainPanel.add(textPane);
-
-        new MatrixBackdrop().startMatrixText(mainPanel);
-
-        window.add(mainPanel);
         window.setVisible(true);
-    }
 
-    private JTextPane createTextPane() {
-        textPane = new JTextPane();
-        textPane.setEditable(false);
-        textPane.setBackground(window.getBackground());
-        textPane.setVisible(true);
-        textPane.setBounds(0, BUTTON_DIM, WIDTH, mainPanel.getHeight() - BUTTON_DIM);
-        initStyles();
-        textPane.setOpaque(false);
+        JPanel mainPanel = new JPanel();
+        window.add(mainPanel, BorderLayout.CENTER);
+        mainPanel.setLayout(null);
+        mainPanel.setBackground(BLACK);
+        mainPanel.setPreferredSize(window.getSize());
 
-        return textPane;
-    }
+        mainPanel.add(logPanel = new LogPanel());
+        logPanel.setSize(logPanel.getParent().getSize());
 
-
-    //TODO clean up this mess XD
-    private JPanel createCustomTitleBar() {
-        JPanel titlePanel = new JPanel();
-        titlePanel.setLayout(null);
-        titlePanel.setBounds(0, 0, WIDTH, BUTTON_DIM);
-        titlePanel.setBackground(TITLEBAR);
-
-        JLabel title = new JLabel("pisscord | PISSCORD j SCUFFED SERVERLOGS");
-        title.setFont(MATRIX16);
-        title.setForeground(TITLETEXT);
-        title.setOpaque(false);
-        title.setBounds(6, 2, title.getText().length() * 16, 32);
-        titlePanel.add(title);
-
-        JPanel buttonPanel = new TitleBar(window);
-        buttonPanel.setLayout(null);
-        buttonPanel.setBounds(WIDTH - (BUTTON_DIM * 2), 0, ( 2 * BUTTON_DIM), BUTTON_DIM);
-
-        new Draggable(window).enableDraggable(titlePanel);
-
-        buttonPanel.setOpaque(false);
-        titlePanel.add(buttonPanel);
-        titlePanel.setVisible(true);
-        return titlePanel;
+        for (Component c : window.getContentPane().getComponents()) {
+            c.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(java.awt.event.ComponentEvent e) {
+                    for (Component c : mainPanel.getComponents()) {
+                        c.setBounds(mainPanel.getBounds());
+                    }
+                }
+            });
+        }
     }
 }

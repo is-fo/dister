@@ -6,15 +6,17 @@ import javax.swing.text.Style;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static server.gui.LogPanel.*;
 import static server.gui.ServerGUI.*;
 
 public class ServerlogPrinter {
 
-    private JTextPane textPane;
+    private final JTextPane textPane;
     private static ServerlogPrinter instance;
 
     private ServerlogPrinter(JTextPane textPane) {
         this.textPane = textPane;
+        textPane.setBounds(textPane.getParent().getBounds());
     }
 
     public static ServerlogPrinter getInstance(JTextPane textPane) {
@@ -46,7 +48,7 @@ public class ServerlogPrinter {
             e.printStackTrace();
         }
 
-        limitLineCount(HEIGHT / ((int)OCRA12.getSize2D() + 3));
+        limitLineCount(textPane.getHeight() / ((int)OCRA12.getSize2D() + 3));
     }
     private void limitLineCount(int limit) {
         try {
