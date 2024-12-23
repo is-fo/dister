@@ -1,4 +1,6 @@
-package server.gui;
+package server.gui.logs;
+
+import server.gui.MatrixBackdrop;
 
 import javax.swing.*;
 import javax.swing.text.Style;
@@ -16,7 +18,7 @@ public class LogPanel extends JPanel {
     public static StyledDocument styledDoc;
     public static Style logStyle, errorStyle, timeStyle;
 
-    private ServerlogPrinter serverlogPrinter;
+    private final ServerlogPrinter serverlogPrinter;
 
     public ServerlogPrinter getServerlogPrinter() {
         return serverlogPrinter;

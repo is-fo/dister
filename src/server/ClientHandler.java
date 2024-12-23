@@ -3,7 +3,7 @@
 package server;
 
 import model.Message;
-import server.gui.ServerGUI;
+import server.gui.logs.Logger;
 
 import java.io.*;
 import java.net.Socket;
@@ -17,12 +17,12 @@ public class ClientHandler implements Runnable {
     private ObjectOutputStream out;
     private final ChatServer server;
 
-    private ServerGUI serverGUI;
+    private final Logger logger;
 
-    public ClientHandler(Socket clientSocket, ChatServer server) {
+    public ClientHandler(Socket clientSocket, ChatServer server, Logger logger) {
         this.clientSocket = clientSocket;
         this.server = server;
-        serverGUI = ServerGUI.getInstance();
+        this.logger = logger;
     }
 
     public void close() {
@@ -37,31 +37,31 @@ public class ClientHandler implements Runnable {
                 clientSocket.close();
             }
         } catch (IOException e) {
-            serverGUI.getServerlogPrinter().printErrors("Error disconnecting client: " + e.getMessage());
+            logger.printErrors("Error disconnecting client: " + e.getMessage());
         }
     }
 
     @Override
     public void run() {
+        try {
+            in = new ObjectInputStream(clientSocket.getInputStream());
+            out = new ObjectOutputStream(clientSocket.getOutputStream());
 
-            try {
-             in = new ObjectInputStream(clientSocket.getInputStream());
-             out = new ObjectOutputStream(clientSocket.getOutputStream());
-
-                BlockingQueue<Message> queue = server.getMessageQueue(this);
-                new Thread(() -> {
-                    try {
-                        while (true) {
-                            Object msg = queue.take();
-                            out.writeObject(msg);
-                        }
-                    } catch (InterruptedException e) {
-                        serverGUI.getServerlogPrinter().printErrors("Message sender interrupted for client: " + clientSocket);
-                    } catch (IOException e) {
-                        serverGUI.getServerlogPrinter().printErrors("Message sender IOException for client: " + clientSocket);
+            BlockingQueue<Message> queue = server.getMessageQueue(this);
+            new Thread(() -> {
+                try {
+                    while (true) {
+                        Object msg = queue.take();
+                        out.writeObject(msg);
                     }
-                }).start();
+                } catch (InterruptedException e) {
+                    logger.printErrors("Message sender interrupted for client: " + clientSocket);
+                } catch (IOException e) {
+                    logger.printErrors("Message sender IOException for client: " + clientSocket);
+                }
+            }).start();
 
+            new Thread(() -> {
                 try {
                     Object message;
                     while ((message = in.readObject()) != null) {
@@ -70,26 +70,19 @@ public class ClientHandler implements Runnable {
                         }
                     }
                 } catch (ClassNotFoundException e) {
-                    serverGUI.getServerlogPrinter().printErrors("Message class not found for client: " + clientSocket);
+                    logger.printErrors("Message class not found for client: " + clientSocket);
+                } catch (IOException e) {
+                    logger.printErrors("Error receiving message from client: " + clientSocket + ": " + e.getMessage());
                 }
+            }).start();
 
         } catch (SocketException e) {
-                serverGUI.getServerlogPrinter().printErrors("SocketException for client: " + clientSocket);
+            logger.printErrors("SocketException for client: " + clientSocket);
         } catch (IOException e) {
             e.printStackTrace();
-            serverGUI.getServerlogPrinter().printErrors("Exception when creating I/O connection.");
+            logger.printErrors("Exception when creating I/O connection.");
         } finally {
-            try {
-                in.close();
-                out.close();
-                if (clientSocket != null) {
-                    clientSocket.close();
-                }
-                server.removeClient(this);
-            } catch (IOException e) {
-                e.printStackTrace();
-                serverGUI.getServerlogPrinter().printErrors("Error when closing streams or socket.");
-            }
+            close();
         }
     }
 }

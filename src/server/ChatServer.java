@@ -4,6 +4,7 @@ package server;
 
 import model.Message;
 import server.gui.ServerGUI;
+import server.gui.logs.Logger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -15,7 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ChatServer {
 
-    private ServerGUI serverGUI;
+    private final Logger logger;
 
     private static final int PORT = 12345;
 
@@ -31,12 +32,7 @@ public class ChatServer {
 
     public void publishMessage(Message message) {
 
-        if (serverGUI != null) {
-            serverGUI.getServerlogPrinter().printLogs(message.getSender().getUsername() + " " + message.getMessage());
-        } else {
-            serverGUI = ServerGUI.getInstance();
-            serverGUI.getServerlogPrinter().printLogs(message.getSender().getUsername() + " " + message.getMessage());
-        }
+        logger.printLogs(message.getSender().getUsername() + " " + message.getMessage());
 
         for (BlockingQueue<Message> queue : clientQueues.values()) {
             queue.offer(message);
@@ -54,37 +50,39 @@ public class ChatServer {
 
     public void close() {
         //TODO exit logik
-        serverGUI.getServerlogPrinter().printLogs("Disconnecting clients...");
+        logger.printLogs("Disconnecting clients...");
 
         for (ClientHandler client : clientQueues.keySet()) {
             client.close();
             removeClient(client);
         }
-        serverGUI.getServerlogPrinter().printLogs("Shutting down server... (TODO)");
+        logger.printLogs("Shutting down server... (TODO)");
         System.exit(Integer.MAX_VALUE);
     }
 
     private void start() {
-        ChatServer server = new ChatServer();
-        serverGUI = ServerGUI.getInstance();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            serverGUI.getServerlogPrinter().printLogs("Chat server started on port " + PORT);
+            logger.printLogs("Chat server started on port " + PORT);
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                serverGUI.getServerlogPrinter().printLogs("New client connected");
+                logger.printLogs("New client connected");
 
-                ClientHandler clientHandler = new ClientHandler(clientSocket, server);
+                ClientHandler clientHandler = new ClientHandler(clientSocket, this, logger);
 
-                server.addClient(clientHandler);
+                this.addClient(clientHandler);
 
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {
-            serverGUI.getServerlogPrinter().printErrors("Error starting server: " + e.getMessage());
+            logger.printErrors("Error starting server: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public ChatServer() {
+        logger = ServerGUI.getInstance().getServerlogPrinter();
     }
 
     public static void main(String[] args) {

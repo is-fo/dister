@@ -1,5 +1,8 @@
 package server.gui;
 
+import server.gui.logs.LogPanel;
+import server.gui.logs.ServerlogPrinter;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
@@ -19,8 +22,8 @@ public class ServerGUI {
     public static final Color MINIMIZE = new Color(0x005F00);
     public static final Color INACTIVE = new Color(0x1A1A1A);
 
-    protected static Font OCRA12;
-    protected static Font MATRIX16;
+    public static Font OCRA12;
+    public static Font MATRIX16;
 
     public static final int WIDTH = 600;
     public static final int HEIGHT = 800;

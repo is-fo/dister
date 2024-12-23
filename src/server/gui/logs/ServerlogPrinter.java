@@ -1,4 +1,4 @@
-package server.gui;
+package server.gui.logs;
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -6,10 +6,10 @@ import javax.swing.text.Style;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static server.gui.LogPanel.*;
+import static server.gui.logs.LogPanel.*;
 import static server.gui.ServerGUI.*;
 
-public class ServerlogPrinter {
+public class ServerlogPrinter implements Logger {
 
     private final JTextPane textPane;
     private static ServerlogPrinter instance;
@@ -35,11 +35,6 @@ public class ServerlogPrinter {
     }
 
     private void printMessageWithStyle(String message, Style style) {
-        if (textPane == null) {
-            System.err.println("TextPane is null");
-            return;
-        }
-
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd [HH:mm:ss]"));
         try {
             styledDoc.insertString(styledDoc.getLength(), timestamp + " ", timeStyle);
