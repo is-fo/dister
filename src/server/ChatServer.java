@@ -20,14 +20,17 @@ public class ChatServer {
 
     private static final int PORT = 12345;
 
-    private Map<ClientHandler, BlockingQueue<Message>> clientQueues = new ConcurrentHashMap<>();
+    private final Map<ClientHandler, BlockingQueue<Message>> clientQueues = new ConcurrentHashMap<>();
 
     public void addClient(ClientHandler client) {
         clientQueues.put(client, new LinkedBlockingQueue<>());
     }
 
     public void removeClient(ClientHandler client) {
-        clientQueues.remove(client);
+        synchronized (clientQueues) {
+            clientQueues.remove(client);
+            logger.printLogs("Removed " + client + " from the queue");
+        }
     }
 
     public void publishMessage(Message message) {
@@ -61,6 +64,8 @@ public class ChatServer {
     }
 
     private void start() {
+
+//        ChatServer chatServer = new ChatServer();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             logger.printLogs("Chat server started on port " + PORT);

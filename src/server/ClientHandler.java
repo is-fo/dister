@@ -8,7 +8,6 @@ import server.gui.logs.Logger;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.concurrent.BlockingQueue;
 
 public class ClientHandler implements Runnable {
 
@@ -16,8 +15,9 @@ public class ClientHandler implements Runnable {
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private final ChatServer server;
-
     private final Logger logger;
+
+    private volatile boolean running = true;
 
     public ClientHandler(Socket clientSocket, ChatServer server, Logger logger) {
         this.clientSocket = clientSocket;
@@ -26,6 +26,8 @@ public class ClientHandler implements Runnable {
     }
 
     public void close() {
+        running = false;
+        server.removeClient(this);
         try {
             if (out != null) {
                 out.close();
@@ -47,17 +49,18 @@ public class ClientHandler implements Runnable {
             in = new ObjectInputStream(clientSocket.getInputStream());
             out = new ObjectOutputStream(clientSocket.getOutputStream());
 
-            BlockingQueue<Message> queue = server.getMessageQueue(this);
             new Thread(() -> {
                 try {
-                    while (true) {
-                        Object msg = queue.take();
+                    while (running) {
+                        Object msg = server.getMessageQueue(this).take();
                         out.writeObject(msg);
                     }
                 } catch (InterruptedException e) {
                     logger.printErrors("Message sender interrupted for client: " + clientSocket);
                 } catch (IOException e) {
                     logger.printErrors("Message sender IOException for client: " + clientSocket);
+                } finally {
+                    close();
                 }
             }).start();
 
@@ -73,6 +76,8 @@ public class ClientHandler implements Runnable {
                     logger.printErrors("Message class not found for client: " + clientSocket);
                 } catch (IOException e) {
                     logger.printErrors("Error receiving message from client: " + clientSocket + ": " + e.getMessage());
+                } finally {
+                    close();
                 }
             }).start();
 
@@ -81,8 +86,6 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
             logger.printErrors("Exception when creating I/O connection.");
-        } finally {
-            close();
         }
     }
 }
